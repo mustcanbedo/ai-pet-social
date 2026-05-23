@@ -1,65 +1,96 @@
-import Image from "next/image";
+'use client';
+
+import { useState, useEffect, useMemo } from 'react';
+import { Pet, ChatMessage, UserMemory, Personality } from '@/types';
+import PetConfigPanel from '@/components/PetConfigPanel';
+import ChatPanel from '@/components/ChatPanel';
+import MemoryPanel from '@/components/MemoryPanel';
+import InteractionPanel from '@/components/InteractionPanel';
 
 export default function Home() {
+  const [mainPet, setMainPet] = useState<Pet>({
+    id: 'pet1', name: '', personality: 'extrovert' as Personality,
+  });
+  const [secondPet, setSecondPet] = useState<Pet>({
+    id: 'pet2', name: '', personality: 'introvert' as Personality,
+  });
+  const [activePetId, setActivePetId] = useState('pet1');
+  const [conversations, setConversations] = useState<Record<string, ChatMessage[]>>({});
+  const [userMemory, setUserMemory] = useState<UserMemory>({
+    preferences: [], recentMemories: [],
+  });
+  const [providerType, setProviderType] = useState<'mock' | 'deepseek'>('mock');
+
+  useEffect(() => {
+    fetch('/api/provider')
+      .then(r => r.json())
+      .then(d => setProviderType(d.type))
+      .catch(() => {});
+  }, []);
+
+  const allPets = useMemo(() => [mainPet, secondPet], [mainPet, secondPet]);
+  const activePet = useMemo(
+    () => allPets.find(p => p.id === activePetId) || mainPet,
+    [allPets, activePetId, mainPet],
+  );
+  const currentMessages = conversations[activePetId] || [];
+
+  const handleChatSend = (petId: string, msg: ChatMessage) => {
+    setConversations(prev => ({
+      ...prev,
+      [petId]: [...(prev[petId] || []), msg],
+    }));
+  };
+
+  const providerBadge =
+    providerType === 'deepseek'
+      ? { label: 'DeepSeek', dot: 'bg-emerald-500' }
+      : { label: 'Mock AI', dot: 'bg-zinc-300' };
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <div className="mx-auto min-h-screen max-w-6xl bg-zinc-50 px-6 py-5">
+      {/* Header */}
+      <header className="mb-5 flex items-center justify-between">
+        <h1 className="text-base font-semibold tracking-tight text-zinc-800">
+          AI 宠物社交
+        </h1>
+        <span className="inline-flex items-center gap-1.5 rounded-full bg-zinc-200/60 px-2.5 py-0.5 text-[11px] font-medium text-zinc-500">
+          <span className={`inline-block h-1.5 w-1.5 rounded-full ${providerBadge.dot}`} />
+          {providerBadge.label}
+        </span>
+      </header>
+
+      <div className="flex gap-5">
+        {/* Sidebar */}
+        <div className="flex w-72 shrink-0 flex-col gap-5">
+          <PetConfigPanel
+            mainPet={mainPet}
+            secondPet={secondPet}
+            onMainPetChange={setMainPet}
+            onSecondPetChange={setSecondPet}
+          />
+          <MemoryPanel memory={userMemory} />
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+
+        {/* Main */}
+        <div className="flex min-w-0 flex-1 flex-col gap-5">
+          <ChatPanel
+            activePet={activePet}
+            allPets={allPets}
+            activePetId={activePetId}
+            onSwitchPet={setActivePetId}
+            messages={currentMessages}
+            memory={userMemory}
+            onSend={(msg) => handleChatSend(activePetId, msg)}
+            onMemoryUpdate={setUserMemory}
+          />
+          <InteractionPanel
+            mainPet={mainPet}
+            secondPet={secondPet}
+            memory={userMemory}
+          />
         </div>
-      </main>
+      </div>
     </div>
   );
 }

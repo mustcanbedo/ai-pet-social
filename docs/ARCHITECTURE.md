@@ -139,11 +139,11 @@ interface AIProvider {
 
 | 决策 | 理由 |
 |------|------|
-| 无数据库 | MVP 聚焦 AI 能力，state 够用 |
-| 无登录 | 降低演示门槛 |
-| AIProvider 抽象 | Mock/DeepSeek 可切换，后续可接 OpenAI 等 |
-| 记忆独立面板 | 能力可见，评审友好 |
-| API Route 代理 | 保护 Key，无需独立后端 |
+| 无数据库 | MVP 聚焦 AI 能力，降低复杂度 |
+| 无登录 | 评审打开即用 |
+| AIProvider 抽象 | 模型可切换，业务代码不变 |
+| 记忆独立面板 | 记忆能力对用户可见 |
+| API Route 代理 | Key 不暴露前端 |
 
 ---
 
@@ -154,4 +154,4 @@ interface AIProvider {
 | 刷新页面记忆丢失 | v0.2 localStorage |
 | Mock 模式语义理解有限 | 推荐 DeepSeek 演示 |
 | 无多用户 | v1.0 |
-| 无线上部署 | v1.0 Vercel |
+| 无 3D 形象 | v0.5 / v1.5（见 PRD） |
